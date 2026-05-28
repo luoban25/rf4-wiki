@@ -69,6 +69,28 @@ var MAP_DECOR_ICONS = {
   '32': 'boss'
 };
 
+var MAP_NAME_ZH = {
+  'Mosquito Lake': '蚊子湖',
+  'Winding Rivulet': '蜿蜒小溪',
+  'Old Burg Lake': '老奥湖',
+  'Belaya River': '白河',
+  'Kuori Lake': '库奥里湖',
+  'Bear Lake': '熊湖',
+  'Volkhov River': '沃尔霍夫河',
+  'Seversky Donets River': '北顿涅茨河',
+  'Sura River': '苏拉河',
+  'The Amber Lake': '琥珀湖',
+  'Akhtuba River': '阿赫图巴河',
+  'Yama River': '亚马河',
+  'Ladoga archipelago': '拉多加群岛',
+  'Ladoga Lake': '拉多加湖',
+  'Lower Tunguska River': '下通古斯卡河',
+  'Copper lake': '铜湖',
+  'Penalty pond': '惩罚池',
+  'Norwegian Sea': '挪威海',
+  'Elk Lake': '麋鹿湖'
+};
+
 var FISH_IMAGE_NAME_MAP = {
   '丁桂': '丁鱥',
   '三红': '北极红点鲑',
@@ -205,6 +227,61 @@ function getFishImage(name, alias) {
   }
   var code = getFishCode(normalizedName);
   return code ? 'https://cn.rf4-stat.ru/images/rf4game/' + code + '.png' : '';
+}
+
+function getMapDisplayName(value) {
+  return MAP_NAME_ZH[value] || value || '未知地图';
+}
+
+function translateMapDescription(desc) {
+  if (!desc) return '地图资料';
+  var speciesMatch = String(desc).match(/(\d+)\s+fish species from RF4-STAT/i);
+  if (speciesMatch) return 'RF4-STAT 收录 ' + speciesMatch[1] + ' 种鱼';
+  return desc;
+}
+
+function translateEquipLabel(value) {
+  var map = {
+    'Match setup': '通用配置',
+    'Durable line': '耐用线组',
+    'Use current hot baits': '使用当前热门饵料',
+    'Check RF4': '参考 RF4-STAT',
+    'General': '通用',
+    'Stable': '稳定',
+    'Data': '数据',
+    'RF4-STAT': 'RF4-STAT'
+  };
+  if (!value) return '';
+  if (map[value]) return map[value];
+  var speciesMatch = String(value).match(/^(\d+)\s+species$/i);
+  if (speciesMatch) return speciesMatch[1] + ' 种鱼';
+  return value;
+}
+
+function getFishDisplayName(name, alias) {
+  return alias || name || '未知鱼种';
+}
+
+function getFishSecondaryName(name, alias) {
+  if (alias && name && alias !== name) return name;
+  return alias ? '' : name;
+}
+
+function formatCatchesText(value) {
+  if (value == null || value === '') return '--';
+  return String(value).replace(/^Catches:\s*/i, '捕获次数：');
+}
+
+function formatRecordTime(value) {
+  if (!value || value === 'Record data') return '统计记录';
+  return value;
+}
+
+function formatSpotDepth(value) {
+  if (!value) return '--';
+  return String(value)
+    .replace(/^Max\s+/i, '最大 ')
+    .replace(/\s+\/\s+Avg\s+/i, ' / 平均 ');
 }
 
 var UI_ICON_PATHS = {
@@ -425,6 +502,7 @@ function getGuideFilteredFish(mapId) {
   return fish.filter(function (entry) {
     return lower(entry.name).indexOf(query) !== -1 ||
       lower(entry.alias).indexOf(query) !== -1 ||
+      lower(getFishDisplayName(entry.name, entry.alias)).indexOf(query) !== -1 ||
       lower(entry.bait).indexOf(query) !== -1;
   });
 }
@@ -510,7 +588,9 @@ function getFilteredMapCards() {
     if (!query) return true;
     var info = getMapInfo(mapId);
     return lower(info.name).indexOf(query) !== -1 ||
+      lower(getMapDisplayName(info.name)).indexOf(query) !== -1 ||
       lower(info.desc).indexOf(query) !== -1 ||
+      lower(translateMapDescription(info.desc)).indexOf(query) !== -1 ||
       lower(getTagline(mapId)).indexOf(query) !== -1;
   });
 }
@@ -582,6 +662,7 @@ function buildMapGrid() {
   var info = getMapInfo(mapId);
   var fish = getMapFish(mapId);
   var image = getMapImage(mapId);
+  var mapTitle = getMapDisplayName(info.name);
   var bgStyle = image ? ' style="background-image:url(\'' + image.replace(/'/g, '%27') + '\')"' : '';
   var bossBadge = isBossMap(mapId) ? '<span class="map-stage-badge accent">&#32456;&#26497;&#28023;&#22270;</span>' : '';
   var directionClass = mapStageDirection < 0 ? ' from-up' : (mapStageDirection > 0 ? ' from-down' : '');
@@ -589,11 +670,11 @@ function buildMapGrid() {
   var countText = fish.length + ' \u79cd\u9c7c';
   var recText = getRecommendationLabel(info.rec || 0);
   var levelText = getMapLevelLabel(mapId);
-  var descText = info.desc || '\u5730\u56fe\u8d44\u6599';
+  var descText = translateMapDescription(info.desc);
 
   grid.innerHTML = '' +
     '<article class="map-stage-card' + directionClass + '" data-map-id="' + escapeHtml(mapId) + '">' +
-      '<button class="map-stage-bg" type="button" aria-label="&#25171;&#24320;' + escapeHtml(info.name) + '&#25915;&#30053;" onclick="openMapGuide(\'' + mapId + '\')">' +
+      '<button class="map-stage-bg" type="button" aria-label="&#25171;&#24320;' + escapeHtml(mapTitle) + '&#25915;&#30053;" onclick="openMapGuide(\'' + mapId + '\')">' +
         '<span class="map-stage-image"' + bgStyle + '></span>' +
         '<span class="map-stage-shade"></span>' +
       '</button>' +
@@ -603,7 +684,7 @@ function buildMapGrid() {
       '</label>' +
       '<div class="map-stage-panel">' +
         '<div class="map-stage-kicker">' + escapeHtml(mapStageIndex + 1) + ' / ' + escapeHtml(cards.length) + '</div>' +
-        '<h1 class="map-stage-title">' + escapeHtml(info.name) + '</h1>' +
+        '<h1 class="map-stage-title">' + escapeHtml(mapTitle) + '</h1>' +
         '<p class="map-stage-subtitle">' + escapeHtml(descText) + '</p>' +
         '<div class="map-stage-meta">' +
           '<span class="map-stage-badge">' + escapeHtml(levelText) + '</span>' +
@@ -636,19 +717,20 @@ function updateGuidePage() {
   var fish = getMapFish(currentMap);
   var filteredFish = getGuideFilteredFish(currentMap);
   var image = getMapImage(currentMap);
+  var mapTitle = getMapDisplayName(info.name);
   var media = byId('guideHeroMedia');
   var allTimes = fish.map(function (entry) {
-    return entry.spots.map(function (spot) { return spot.time; });
+    return entry.spots.map(function (spot) { return formatRecordTime(spot.time); });
   }).reduce(function (all, group) { return all.concat(group); }, []);
 
-  if (byId('guideTitle')) byId('guideTitle').textContent = info.name;
-  if (byId('guideSubtitle')) byId('guideSubtitle').textContent = info.desc || '地图详情';
+  if (byId('guideTitle')) byId('guideTitle').textContent = mapTitle;
+  if (byId('guideSubtitle')) byId('guideSubtitle').textContent = translateMapDescription(info.desc);
   if (media) {
     media.style.backgroundImage = image ? 'url("' + image.replace(/"/g, '%22') + '")' : '';
     media.classList.toggle('no-image', !image);
   }
-  if (byId('guideHeroTitle')) byId('guideHeroTitle').textContent = info.name;
-  if (byId('guideHeroDesc')) byId('guideHeroDesc').textContent = (isBossMap(currentMap) ? '终极大boss海图，挑战最高海域收益。' : (info.desc || '地图资料')) + ' · ' + getTagline(currentMap);
+  if (byId('guideHeroTitle')) byId('guideHeroTitle').textContent = mapTitle;
+  if (byId('guideHeroDesc')) byId('guideHeroDesc').textContent = (isBossMap(currentMap) ? '终极大 boss 海图，挑战最高海域收益。' : translateMapDescription(info.desc)) + ' · ' + getTagline(currentMap);
   if (byId('guideLevelBadge')) byId('guideLevelBadge').textContent = getMapLevelLabel(currentMap);
   if (byId('guideBossBadge')) byId('guideBossBadge').hidden = !isBossMap(currentMap);
   if (byId('guideDiff')) byId('guideDiff').textContent = String(info.diff || 0);
@@ -680,11 +762,11 @@ function updateGuidePage() {
             '<span class="guide-fish-icon">' + (imageUrl ? '<img src="' + imageUrl + '" alt="' + escapeHtml(entry.name) + '" loading="lazy" onerror="this.parentElement.innerHTML=getFishFallbackSvg()">' : getFishFallbackSvg()) + '</span>' +
             '<span class="guide-fish-body">' +
               '<span class="guide-fish-row">' +
-                '<span class="guide-fish-name">' + escapeHtml(entry.name) + '</span>' +
+                '<span class="guide-fish-name">' + escapeHtml(getFishDisplayName(entry.name, entry.alias)) + '</span>' +
                 '<span class="guide-fish-star' + (isBookmarked(entry) ? ' saved' : '') + '" onclick="event.stopPropagation();toggleBookmarkByMapIndex(\'' + currentMap + '\',' + originalIndex + ')">' + getUiIcon(isBookmarked(entry) ? 'starFilled' : 'star', 'ui-icon') + '</span>' +
               '</span>' +
-              '<span class="guide-fish-meta">' + escapeHtml(entry.alias || '暂无别名') + '</span>' +
-              '<span class="guide-fish-meta">' + escapeHtml(spot ? spot.time : '--') + ' · ' + escapeHtml(spot ? spot.depth : '--') + '</span>' +
+              '<span class="guide-fish-meta">' + escapeHtml(getFishSecondaryName(entry.name, entry.alias) || '暂无英文名') + '</span>' +
+              '<span class="guide-fish-meta">' + escapeHtml(formatRecordTime(spot ? spot.time : '--')) + ' · ' + escapeHtml(formatSpotDepth(spot ? spot.depth : '--')) + '</span>' +
             '</span>' +
           '</button>';
       }).join('');
@@ -698,8 +780,8 @@ function updateGuidePage() {
         '<div class="guide-equip-item">' +
           '<span class="guide-equip-icon">' + getUiIcon(getEquipmentIconName(equip), 'ui-icon') + '</span>' +
           '<span class="guide-equip-copy">' +
-            '<strong>' + escapeHtml(equip.name || '装备') + '</strong>' +
-            '<span>' + escapeHtml(equip.tag || '推荐') + '</span>' +
+            '<strong>' + escapeHtml(translateEquipLabel(equip.name) || '装备') + '</strong>' +
+            '<span>' + escapeHtml(translateEquipLabel(equip.tag) || '推荐') + '</span>' +
           '</span>' +
         '</div>';
     }).join('');
@@ -714,9 +796,9 @@ function updateGuidePage() {
         var spot = getPrimarySpot(entry);
         return '' +
           '<div class="guide-spot-item">' +
-            '<div class="guide-spot-name">' + escapeHtml(entry.name) + '</div>' +
+            '<div class="guide-spot-name">' + escapeHtml(getFishDisplayName(entry.name, entry.alias)) + '</div>' +
             '<div class="guide-spot-line">' + escapeHtml(spot ? spot.loc : '--') + '</div>' +
-            '<div class="guide-spot-line">' + escapeHtml(spot ? spot.time : '--') + ' · ' + escapeHtml(spot ? spot.depth : '--') + '</div>' +
+            '<div class="guide-spot-line">' + escapeHtml(formatRecordTime(spot ? spot.time : '--')) + ' · ' + escapeHtml(formatSpotDepth(spot ? spot.depth : '--')) + '</div>' +
           '</div>';
       });
       spotGrid.innerHTML = spots.join('');
@@ -766,7 +848,7 @@ function buildEncyclopediaTabs() {
 
   tabs.innerHTML = maps.map(function (mapName) {
     var active = mapName === encCurrentMap ? ' active' : '';
-    var label = mapName === 'all' ? '全部地图' : mapName;
+    var label = mapName === 'all' ? '全部地图' : getMapDisplayName(mapName);
     return '<button class="enc-map-tab' + active + '" type="button" onclick="setEncMap(\'' + escapeHtml(mapName) + '\')">' + escapeHtml(label) + '</button>';
   }).join('');
 }
@@ -776,7 +858,11 @@ function getFilteredEncyclopediaItems() {
   return FISH_ENCYCLOPEDIA.filter(function (entry) {
     if (encCurrentMap !== 'all' && entry.map !== encCurrentMap) return false;
     if (!encSearch) return true;
-    return lower(entry.name).indexOf(lower(encSearch)) !== -1 || lower(entry.map).indexOf(lower(encSearch)) !== -1;
+    var fish = findFishByName(entry.name, entry.map);
+    return lower(entry.name).indexOf(lower(encSearch)) !== -1 ||
+      lower(getMapDisplayName(entry.map)).indexOf(lower(encSearch)) !== -1 ||
+      lower(entry.map).indexOf(lower(encSearch)) !== -1 ||
+      !!(fish && lower(getFishDisplayName(entry.name, fish.alias)).indexOf(lower(encSearch)) !== -1);
   });
 }
 
@@ -811,13 +897,13 @@ function buildEncyclopediaGrid() {
     return '' +
       '<button class="enc-fish-card" type="button" onclick="showEncDetailByName(\'' + escapeInlineJsString(entry.name) + '\', \'' + escapeInlineJsString(entry.map || '') + '\')">' +
         '<span class="enc-fish-img-wrap">' + (image ? '<img class="enc-fish-img" src="' + image + '" alt="' + escapeHtml(entry.name) + '" loading="lazy" onerror="this.parentElement.innerHTML=getFishFallbackSvg()">' : getFishFallbackSvg()) + '</span>' +
-        '<span class="enc-fish-name">' + escapeHtml(entry.name) + '</span>' +
-        '<span class="enc-fish-alias">' + escapeHtml(fish ? (fish.alias || '暂无别名') : '资料条目') + '</span>' +
+        '<span class="enc-fish-name">' + escapeHtml(getFishDisplayName(entry.name, fish ? fish.alias : '')) + '</span>' +
+        '<span class="enc-fish-alias">' + escapeHtml(getFishSecondaryName(entry.name, fish ? fish.alias : '') || '资料条目') + '</span>' +
         '<span class="enc-fish-stats">' +
-          '<span class="enc-fish-weight">Max ' + escapeHtml(String(entry.max || '--')) + ' g</span>' +
-          '<span class="enc-fish-weight">Avg ' + escapeHtml(String(entry.avg || '--')) + ' g</span>' +
+          '<span class="enc-fish-weight">最大 ' + escapeHtml(String(entry.max || '--')) + ' g</span>' +
+          '<span class="enc-fish-weight">平均 ' + escapeHtml(String(entry.avg || '--')) + ' g</span>' +
         '</span>' +
-        '<span class="enc-fish-map">' + escapeHtml(entry.map || '未知地图') + '</span>' +
+        '<span class="enc-fish-map">' + escapeHtml(getMapDisplayName(entry.map || '')) + '</span>' +
       '</button>';
   }).join('');
 
@@ -887,11 +973,11 @@ function showEncDetailByName(name, mapName) {
   if (byId('encDetailImg')) {
     byId('encDetailImg').innerHTML = image ? '<img class="enc-detail-figure" src="' + image + '" alt="' + escapeHtml(name) + '" loading="lazy" onerror="this.parentElement.innerHTML=getFishFallbackSvg()">' : getFishFallbackSvg();
   }
-  if (byId('encDetailTitle')) byId('encDetailTitle').textContent = entry.name;
-  if (byId('encDetailAlias')) byId('encDetailAlias').textContent = fish ? (fish.alias || '暂无别名') : '资料条目';
-  if (byId('encDetailMap')) byId('encDetailMap').textContent = entry.map || '--';
-  if (byId('encDetailMax')) byId('encDetailMax').textContent = (entry.max || '--') + ' g';
-  if (byId('encDetailAvg')) byId('encDetailAvg').textContent = (entry.avg || '--') + ' g';
+  if (byId('encDetailTitle')) byId('encDetailTitle').textContent = getFishDisplayName(entry.name, fish ? fish.alias : '');
+  if (byId('encDetailAlias')) byId('encDetailAlias').textContent = getFishSecondaryName(entry.name, fish ? fish.alias : '') || '资料条目';
+  if (byId('encDetailMap')) byId('encDetailMap').textContent = getMapDisplayName(entry.map || '--');
+  if (byId('encDetailMax')) byId('encDetailMax').textContent = '最大 ' + (entry.max || '--') + ' g';
+  if (byId('encDetailAvg')) byId('encDetailAvg').textContent = '平均 ' + (entry.avg || '--') + ' g';
   if (byId('encDetailSpotCount')) byId('encDetailSpotCount').textContent = fish && fish.spots ? String(fish.spots.length) : '0';
   if (byId('encDetailModal')) byId('encDetailModal').classList.add('show');
 }
@@ -934,12 +1020,12 @@ function buildBookmarkGrid() {
         '<span class="bookmark-card-icon">' + (image ? '<img src="' + image + '" alt="' + escapeHtml(name) + '" loading="lazy" onerror="this.parentElement.innerHTML=getFishFallbackSvg()">' : getFishFallbackSvg()) + '</span>' +
         '<span class="bookmark-card-body">' +
           '<span class="bookmark-card-head">' +
-            '<span class="bookmark-map-pill">' + escapeHtml(info.name || mapId || '未知地图') + '</span>' +
+            '<span class="bookmark-map-pill">' + escapeHtml(getMapDisplayName(info.name || mapId || '未知地图')) + '</span>' +
             '<span class="bookmark-saved-time">' + escapeHtml(formatSavedTime(bookmarkMeta.savedAt)) + '</span>' +
           '</span>' +
-          '<span class="bookmark-card-name">' + escapeHtml(name) + '</span>' +
-          '<span class="bookmark-card-meta">' + escapeHtml(fish ? (fish.alias || '暂无别名') : '暂无别名') + '</span>' +
-          '<span class="bookmark-card-meta">主饵：' + escapeHtml(fish ? (fish.bait || '--') : (bookmarkMeta.bait || '--')) + '</span>' +
+          '<span class="bookmark-card-name">' + escapeHtml(getFishDisplayName(name, fish ? fish.alias : (bookmarkMeta.alias || ''))) + '</span>' +
+          '<span class="bookmark-card-meta">' + escapeHtml(getFishSecondaryName(name, fish ? fish.alias : (bookmarkMeta.alias || '')) || '暂无英文名') + '</span>' +
+          '<span class="bookmark-card-meta">主饵：' + escapeHtml(formatCatchesText(fish ? (fish.bait || '--') : (bookmarkMeta.bait || '--'))) + '</span>' +
         '</span>' +
       '</button>';
   }).join('');
@@ -961,7 +1047,7 @@ function toggleBookmarkByMapIndex(mapId, index) {
   if (isBookmarked(fish)) {
     delete fishBookmarks[key];
     delete fishBookmarks[fish.name];
-    showToast('已取消收藏 ' + fish.name, 'info');
+    showToast('已取消收藏 ' + getFishDisplayName(fish.name, fish.alias), 'info');
   } else {
     fishBookmarks[key] = {
       name: fish.name,
@@ -970,7 +1056,7 @@ function toggleBookmarkByMapIndex(mapId, index) {
       bait: fish.bait,
       savedAt: Date.now()
     };
-    showToast('已收藏 ' + fish.name, 'success');
+    showToast('已收藏 ' + getFishDisplayName(fish.name, fish.alias), 'success');
   }
   saveBookmarks();
   updateSummaryStats();
@@ -991,8 +1077,8 @@ function openFishModal(fish) {
   if (byId('modalFishImg')) {
     byId('modalFishImg').innerHTML = image ? '<img src="' + image + '" alt="' + escapeHtml(fish.name) + '" loading="lazy" onerror="this.parentElement.innerHTML=getFishFallbackSvg()">' : getFishFallbackSvg();
   }
-  if (byId('modalFishName')) byId('modalFishName').textContent = fish.name;
-  if (byId('modalFishAlias')) byId('modalFishAlias').textContent = fish.alias || '暂无别名';
+  if (byId('modalFishName')) byId('modalFishName').textContent = getFishDisplayName(fish.name, fish.alias);
+  if (byId('modalFishAlias')) byId('modalFishAlias').textContent = getFishSecondaryName(fish.name, fish.alias) || '暂无英文名';
   updateModalBookmarkBtn(fish);
 
   if (byId('modalSpots')) {
@@ -1002,9 +1088,9 @@ function openFishModal(fish) {
           '<div class="modal-spot-title">钓点 ' + (index + 1) + '</div>' +
           '<div class="modal-spot-grid">' +
             '<div class="modal-spot-row"><span class="modal-spot-label">坐标</span><span class="coord-tag">' + escapeHtml(spot.loc || '--') + '</span></div>' +
-            '<div class="modal-spot-row"><span class="modal-spot-label">深度</span><span class="modal-spot-val">' + escapeHtml(spot.depth || '--') + '</span></div>' +
-            '<div class="modal-spot-row"><span class="modal-spot-label">饵料</span><span class="modal-spot-val">' + escapeHtml(spot.bait || fish.bait || '--') + '</span></div>' +
-            '<div class="modal-spot-row"><span class="modal-spot-label">时间</span><span class="modal-spot-val">' + escapeHtml(spot.time || '--') + '</span></div>' +
+            '<div class="modal-spot-row"><span class="modal-spot-label">深度</span><span class="modal-spot-val">' + escapeHtml(formatSpotDepth(spot.depth || '--')) + '</span></div>' +
+            '<div class="modal-spot-row"><span class="modal-spot-label">饵料</span><span class="modal-spot-val">' + escapeHtml(formatCatchesText(spot.bait || fish.bait || '--')) + '</span></div>' +
+            '<div class="modal-spot-row"><span class="modal-spot-label">时间</span><span class="modal-spot-val">' + escapeHtml(formatRecordTime(spot.time || '--')) + '</span></div>' +
           '</div>' +
         '</div>';
     }).join('');
@@ -1042,7 +1128,7 @@ function toggleModalBookmark() {
   if (isBookmarked(fish)) {
     delete fishBookmarks[key];
     delete fishBookmarks[fish.name];
-    showToast('已取消收藏 ' + fish.name, 'info');
+    showToast('已取消收藏 ' + getFishDisplayName(fish.name, fish.alias), 'info');
   } else {
     fishBookmarks[key] = {
       name: fish.name,
@@ -1051,7 +1137,7 @@ function toggleModalBookmark() {
       bait: fish.bait,
       savedAt: Date.now()
     };
-    showToast('已收藏 ' + fish.name, 'success');
+    showToast('已收藏 ' + getFishDisplayName(fish.name, fish.alias), 'success');
   }
   saveBookmarks();
   updateModalBookmarkBtn(fish);
@@ -1062,11 +1148,11 @@ function toggleModalBookmark() {
 
 function copyFishCoords() {
   if (!currentModalFish) return;
-  var fishName = currentModalFish.name;
+  var fishName = getFishDisplayName(currentModalFish.name, currentModalFish.alias);
   var text = currentModalFish.spots.map(function (spot, index) {
-    return '钓点' + (index + 1) + ': ' + (spot.loc || '--') + ' | 深度: ' + (spot.depth || '--') + ' | 饵料: ' + (spot.bait || '--') + ' | 时间: ' + (spot.time || '--');
+    return '钓点' + (index + 1) + ': ' + (spot.loc || '--') + ' | 深度: ' + formatSpotDepth(spot.depth || '--') + ' | 饵料: ' + formatCatchesText(spot.bait || '--') + ' | 时间: ' + formatRecordTime(spot.time || '--');
   }).join('\n');
-  var full = currentModalFish.name + ' (' + (currentModalFish.alias || '暂无别名') + ')\n' + text;
+  var full = fishName + ' (' + (getFishSecondaryName(currentModalFish.name, currentModalFish.alias) || '暂无英文名') + ')\n' + text;
   copyTextToClipboard(full).then(function (copied) {
     showToast(copied ? ('已复制 ' + fishName + ' 坐标') : '复制失败，请手动复制', copied ? 'success' : 'warn');
   });

@@ -12118,7 +12118,7 @@ var MAP_IMAGES = {
   "11": "assets/map-27.png",
   "12": "assets/map-27b.png",
   "13": "assets/map-28.png",
-  "14": "https://oss.rf4db.com/mp/maps/14.jpeg",
+  "14": "assets/map-14.webp",
   "15": "assets/map-31.png",
   "16": "assets/map-32.png",
   "18": "assets/map-29.png",
