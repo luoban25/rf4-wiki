@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="俄罗斯钓鱼4游戏导航攻略 - 地图钓点、鱼种百科、装备推荐">
+  <title>俄罗斯钓鱼4 · 地图全览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="styles.css?t=202605281700">
+</head>
+<body>
+  <div class="app" role="application" aria-label="俄罗斯钓鱼4地图全览">
+    <header class="topbar" role="banner">
+      <div class="brand">
+        <div class="brand-logo-wrap">
+          <img src="assets/logo.png" alt="俄罗斯钓鱼4" class="brand-logo">
+        </div>
+        <div class="brand-copy">
+          <div class="brand-title">俄罗斯钓鱼4</div>
+          <div class="brand-subtitle">RUSSIAN FISHING 4</div>
+        </div>
+      </div>
+
+      <nav class="topnav" aria-label="主导航">
+        <button class="topnav-item active" type="button" data-nav="0" onclick="setNav(0)">
+          <span class="topnav-icon ui-icon-frame" data-ui-icon="map" aria-hidden="true"></span>
+          <span>地图</span>
+        </button>
+        <button class="topnav-item" type="button" data-nav="1" onclick="setNav(1)">
+          <span class="topnav-icon ui-icon-frame" data-ui-icon="guide" aria-hidden="true"></span>
+          <span>攻略</span>
+        </button>
+        <button class="topnav-item" type="button" data-nav="2" onclick="setNav(2)">
+          <span class="topnav-icon ui-icon-frame" data-ui-icon="encyclopedia" aria-hidden="true"></span>
+          <span>百科</span>
+        </button>
+        <button class="topnav-item" type="button" data-nav="3" onclick="setNav(3)">
+          <span class="topnav-icon ui-icon-frame" data-ui-icon="bookmark" aria-hidden="true"></span>
+          <span>收藏</span>
+        </button>
+      </nav>
+    </header>
+
+    <main class="main-shell">
+      <section class="page-section active" id="mapPage" aria-label="地图总览">
+        <div class="map-stage" id="mapGrid" role="region" aria-label="地图全屏总览"></div>
+      </section>
+
+      <section class="page-section" id="guidePage" aria-label="地图攻略">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">地图攻略</div>
+            <h2 class="section-title" id="guideTitle">地图详情</h2>
+            <div class="section-subtitle" id="guideSubtitle">选择任意地图查看鱼种、钓点和装备建议。</div>
+          </div>
+          <div class="section-actions">
+            <button class="section-btn" type="button" onclick="setNav(0)">返回地图</button>
+            <button class="section-btn accent" type="button" onclick="openCurrentMapInEncyclopedia()">查看该地图百科</button>
+          </div>
+        </div>
+
+        <div class="guide-hero-card">
+          <div class="guide-hero-media" id="guideHeroMedia"></div>
+          <div class="guide-hero-overlay"></div>
+          <div class="guide-hero-content">
+            <div class="guide-badges">
+              <span class="guide-badge" id="guideLevelBadge">Lv.0</span>
+              <span class="guide-badge accent" id="guideBossBadge" hidden>终极挑战</span>
+            </div>
+            <div class="guide-hero-title" id="guideHeroTitle">地图名称</div>
+            <div class="guide-hero-desc" id="guideHeroDesc">地图概述</div>
+            <div class="guide-stats">
+              <div class="guide-stat">
+                <span class="guide-stat-label">难度</span>
+                <strong id="guideDiff">-</strong>
+              </div>
+              <div class="guide-stat">
+                <span class="guide-stat-label">推荐</span>
+                <strong id="guideRec">-</strong>
+              </div>
+              <div class="guide-stat">
+                <span class="guide-stat-label">鱼种</span>
+                <strong id="guideFishTotal">0</strong>
+              </div>
+              <div class="guide-stat">
+                <span class="guide-stat-label">热门时段</span>
+                <strong id="guideBestTime">--</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-layout">
+          <section class="guide-panel">
+            <div class="guide-panel-head">
+              <span>目标鱼种</span>
+              <span class="guide-panel-meta" id="guideFishCount">0 项</span>
+            </div>
+            <label class="panel-search guide-filter-search" aria-label="搜索当前地图鱼种">
+              <input id="guideFishSearch" type="text" placeholder="筛选当前地图鱼种 / 别名">
+              <span class="hero-search-icon ui-icon-muted" data-ui-icon="search" aria-hidden="true"></span>
+            </label>
+            <div class="guide-fish-list" id="guideFishList"></div>
+          </section>
+
+          <section class="guide-panel">
+            <div class="guide-panel-head">
+              <span>推荐装备</span>
+            </div>
+            <div class="guide-gear-list" id="guideEquipList"></div>
+
+            <div class="guide-panel-head spaced">
+              <span>热门钓点</span>
+            </div>
+            <div class="guide-spot-grid" id="guideSpotGrid"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page-section" id="encyclopediaPage" aria-label="鱼类百科">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">鱼类百科</div>
+            <h2 class="section-title">鱼种图鉴</h2>
+            <div class="section-subtitle">按地图、重量和鱼种名称快速浏览资料条目。</div>
+          </div>
+          <div class="section-actions">
+            <span class="section-count"><strong id="encTotal">0</strong> 条目</span>
+            <label class="hero-search encyclopedia-search" aria-label="搜索鱼类">
+              <input id="encSearch" type="text" placeholder="搜索鱼名 / 地图">
+              <span class="hero-search-icon ui-icon-muted" data-ui-icon="search" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="enc-map-tabs" id="encMapTabs" role="tablist" aria-label="百科地图筛选"></div>
+        <div class="enc-grid" id="encGrid"></div>
+        <div class="enc-pagination" id="encPagination"></div>
+      </section>
+
+      <section class="page-section" id="bookmarkPage" aria-label="收藏列表">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">收藏夹</div>
+            <h2 class="section-title">已收藏鱼种</h2>
+            <div class="section-subtitle">把常刷目标鱼保留下来，快速跳回对应地图和详情。</div>
+          </div>
+          <div class="section-actions">
+            <span class="section-count"><strong id="bookmarkTotal">0</strong> 条收藏</span>
+          </div>
+        </div>
+
+        <div class="bookmark-grid" id="bookmarkGrid"></div>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <div class="statusbar-left">
+        <span>版本信息：v1.0.0.5</span>
+        <span>游戏版本：4.0.20562</span>
+      </div>
+      <div class="statusbar-center" aria-label="RF4 品牌标识">
+        <img src="assets/logo.png" alt="RF4" class="statusbar-logo">
+        <span class="statusbar-brand">RF4 / 地图资料总览站</span>
+      </div>
+      <div class="statusbar-right">
+        <span id="statusUpdateTime">更新时间：2026-05-12 20:00</span>
+        <span class="server-status"><i></i>服务器状态：正常</span>
+      </div>
+    </footer>
+  </div>
+
+  <div class="fish-modal-overlay" id="fishModalOverlay" role="dialog" aria-modal="true" aria-label="鱼种详情" onclick="if (event.target === this) closeFishModal()">
+    <div class="fish-modal">
+      <button class="fish-modal-close" type="button" onclick="closeFishModal()" aria-label="关闭"><span class="ui-icon" data-ui-icon="close" aria-hidden="true"></span></button>
+      <div class="modal-fish-header">
+        <div class="modal-fish-img" id="modalFishImg"></div>
+        <div class="modal-fish-meta">
+          <div class="modal-fish-name" id="modalFishName">-</div>
+          <div class="modal-fish-alias" id="modalFishAlias">-</div>
+          <div class="modal-fish-btns">
+            <button class="modal-btn modal-btn-bookmark" type="button" id="modalBookmarkBtn" onclick="toggleModalBookmark()">
+              <span id="modalBookmarkIcon" class="ui-icon" data-ui-icon="star"></span>
+              <span id="modalBookmarkText">收藏</span>
+            </button>
+            <button class="modal-btn modal-btn-copy" type="button" onclick="copyFishCoords()"><span class="ui-icon" data-ui-icon="copy" aria-hidden="true"></span>复制坐标</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-spots" id="modalSpots"></div>
+    </div>
+  </div>
+
+  <div class="enc-detail-modal" id="encDetailModal" role="dialog" aria-modal="true" aria-label="百科鱼种详情" onclick="if (event.target === this) closeEncDetail()">
+    <div class="enc-detail-box">
+      <button class="enc-detail-close" type="button" onclick="closeEncDetail()" aria-label="关闭"><span class="ui-icon" data-ui-icon="close" aria-hidden="true"></span></button>
+      <div class="enc-detail-top">
+        <div class="enc-detail-img" id="encDetailImg"></div>
+        <div class="enc-detail-info">
+          <div class="enc-detail-title" id="encDetailTitle">-</div>
+          <div class="enc-detail-subtitle" id="encDetailAlias">-</div>
+        </div>
+      </div>
+      <div class="enc-detail-rows">
+        <div class="enc-detail-row"><span class="enc-detail-label">主要地图</span><span class="enc-detail-value" id="encDetailMap">-</span></div>
+        <div class="enc-detail-row"><span class="enc-detail-label">最大记录</span><span class="enc-detail-value" id="encDetailMax">-</span></div>
+        <div class="enc-detail-row"><span class="enc-detail-label">平均重量</span><span class="enc-detail-value" id="encDetailAvg">-</span></div>
+        <div class="enc-detail-row"><span class="enc-detail-label">关联钓点</span><span class="enc-detail-value" id="encDetailSpotCount">-</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="fish-data.js?t=202605281430"></script>
+  <script src="data.js?t=202605281430"></script>
+  <script src="script.js?t=202605281700"></script>
+</body>
+</html>
